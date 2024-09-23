@@ -3,7 +3,6 @@ export function factorial(n: number): number {
     throw new Error("Negative numbers not supported");
   }
   if (n == 0) {
-    
     return 1;
   }
   return n * factorial(n - 1);
