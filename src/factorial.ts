@@ -8,6 +8,9 @@ export function factorial(n: number): number {
   return n * factorial(n - 1);
 }
 
+// Make a commit that causes the CI type checking to failand then fix it
+factorial("test");
+
 export function initFactorialUi(component: HTMLElement) {
   component.innerHTML = `Factorial value <code>5!</code> is <code>${factorial(5)}</code>.`;
 }
