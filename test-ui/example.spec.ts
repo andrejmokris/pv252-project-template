@@ -49,3 +49,75 @@ test("Verify Site B div click and navigation", async ({ page }) => {
 
   expect(page.url()).toContain("/site_b.html");
 });
+
+test("Go to GH and find repositary of the template", async ({ page }) => {
+  await page.goto("https://github.com");
+
+  await page.click('button[data-target="qbsearch-input.inputButton"]');
+
+  await page.waitForSelector("#query-builder-test");
+
+  await page.fill("#query-builder-test", "pv252-project-template");
+
+  await page.press("#query-builder-test", "Enter");
+
+  // Verify URL
+  await expect(page).toHaveURL(
+    "https://github.com/search?q=pv252-project-template&type=repositories",
+  );
+
+  // Check if the specific repository is found
+  const repoLink = page.getByRole("link", {
+    name: "daemontus/pv252-project-template",
+  });
+
+  await expect(repoLink).toBeVisible();
+});
+
+test("Get the repository link and navigate to it", async ({ page }) => {
+  await page.goto(
+    "https://github.com/search?q=pv252-project-template&type=repositories",
+  );
+
+  const repoLinkSelector =
+    'a.Link__StyledLink-sc-14289xe-0:has-text("daemontus/pv252-project-template")';
+  await expect(page.locator(repoLinkSelector)).toBeVisible();
+
+  // Click on the repository link
+  await page.click(repoLinkSelector);
+
+  await expect(page).toHaveURL(
+    "https://github.com/daemontus/pv252-project-template",
+  );
+});
+
+test("Verify the number of forks", async ({ page }) => {
+  await page.goto("https://github.com/daemontus/pv252-project-template");
+
+  const forksSelector = 'a[href$="/forks"].Link--muted';
+
+  await expect(page.locator(forksSelector)).toBeVisible();
+
+  const forksText = await page.locator(forksSelector).innerText();
+  const forksCount = parseInt(forksText.match(/\d+/)?.[0] || "0", 10);
+
+  expect(forksCount).toBeGreaterThan(20);
+});
+
+test("Get list of forks and verify the user andrejmokris has forked the repo", async ({
+  page,
+}) => {
+  await page.goto("https://github.com/daemontus/pv252-project-template");
+
+  const forksSelector = 'a[href$="/forks"].Link--muted';
+
+  await expect(page.locator(forksSelector)).toBeVisible();
+
+  await page.click(forksSelector);
+
+  await expect(page).toHaveURL(
+    "https://github.com/daemontus/pv252-project-template/forks",
+  );
+
+  await expect(page.getByText("andrejmokris", { exact: false })).toBeVisible();
+});
