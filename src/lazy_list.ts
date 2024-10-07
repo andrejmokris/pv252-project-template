@@ -73,20 +73,37 @@ export class LazyList<T> extends HTMLElement {
     this.#listElement = this.shadowRoot.querySelector<HTMLElement>("#list")!;
 
     this.#listElement.onscroll = () => {
-      console.log(this.#listElement.scrollTop);
+      this.#scrollPositionChanged(this.#listElement.scrollTop);
     };
-
-    // Remove this once you are actually showing some data in the list.
-    this.innerHTML = "<span> Some content </span>"
   }
 
   setData(data: T[]) {
     this.#data = data;
     // TODO: Data changed, re-draw content.
+    this.#redraw();
   }
 
   setRenderer(renderer: Renderer<T>) {
     this.#renderFunction = renderer;
     // TODO: Renderer changed, re-draw content.
+    this.#redraw();
+  }
+
+  #redraw() {
+    this.innerHTML = "";
+    // height of element: 350px
+    const index = this.#listElement.scrollTop / 350;
+    this.#data.slice(index, index + 3).forEach((element) => {
+      this.append(this.#renderFunction(element));
+    });
+  }
+
+  #scrollPositionChanged(topOffset: number) {
+    console.log(topOffset);
+
+    this.#topOffsetElement.style.height = `${topOffset}px`;
+    this.#listElement.scrollTop = topOffset;
+
+    this.#redraw();
   }
 }
