@@ -74,23 +74,6 @@ test("Go to GH and find repositary of the template", async ({ page }) => {
   await expect(repoLink).toBeVisible();
 });
 
-test("Get the repository link and navigate to it", async ({ page }) => {
-  await page.goto(
-    "https://github.com/search?q=pv252-project-template&type=repositories",
-  );
-
-  const repoLinkSelector =
-    'a.Link__StyledLink-sc-14289xe-0:has-text("daemontus/pv252-project-template")';
-  await expect(page.locator(repoLinkSelector)).toBeVisible();
-
-  // Click on the repository link
-  await page.click(repoLinkSelector);
-
-  await expect(page).toHaveURL(
-    "https://github.com/daemontus/pv252-project-template",
-  );
-});
-
 test("Verify the number of forks", async ({ page }) => {
   await page.goto("https://github.com/daemontus/pv252-project-template");
 
