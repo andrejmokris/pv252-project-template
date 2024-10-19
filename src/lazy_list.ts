@@ -44,12 +44,12 @@ export class LazyList<T> extends HTMLElement {
   // The index of the first visible data item.
   #visiblePosition: number = 0;
 
-  // The amount of space that needs to be shown before the first visible item.
-  #topOffset: number = 0;
   #topOffsetElement: HTMLElement;
-  // The amount of space that needs to be shown after the last visible item.
-  #bottomOffset: number = 0;
+
   #bottomOffsetElement: HTMLElement;
+
+  #componentHeight = 350;
+  #itemPerView = 5;
 
   // The container that stores the spacer elements and the slot where items are inserted.
   #listElement: HTMLElement;
@@ -79,31 +79,35 @@ export class LazyList<T> extends HTMLElement {
 
   setData(data: T[]) {
     this.#data = data;
-    // TODO: Data changed, re-draw content.
     this.#redraw();
   }
 
   setRenderer(renderer: Renderer<T>) {
     this.#renderFunction = renderer;
-    // TODO: Renderer changed, re-draw content.
     this.#redraw();
   }
 
   #redraw() {
     this.innerHTML = "";
-    // height of element: 350px
-    const index = this.#listElement.scrollTop / 350;
-    this.#data.slice(index, index + 3).forEach((element) => {
-      this.append(this.#renderFunction(element));
-    });
+    this.#data
+      .slice(this.#visiblePosition, this.#visiblePosition + this.#itemPerView)
+      .forEach((element) => {
+        this.append(this.#renderFunction(element));
+      });
   }
 
   #scrollPositionChanged(topOffset: number) {
-    console.log(topOffset);
+    const index = Math.floor(topOffset / this.#componentHeight);
+    this.#visiblePosition = index;
 
-    this.#topOffsetElement.style.height = `${topOffset}px`;
+    this.#topOffsetElement.style.height = `${this.#visiblePosition * this.#componentHeight}px`;
+
+    const remainingItems =
+      this.#data.length - (this.#visiblePosition + this.#itemPerView);
+    const bottomSpacerHeight = remainingItems * this.#componentHeight;
+    this.#bottomOffsetElement.style.height = `${bottomSpacerHeight}px`;
+
     this.#listElement.scrollTop = topOffset;
-
     this.#redraw();
   }
 }
