@@ -1,7 +1,17 @@
-import { attr, css, FASTElement, html, observable, when, repeat, Observable, Subscriber } from "@microsoft/fast-element";
+import {
+  attr,
+  css,
+  FASTElement,
+  html,
+  observable,
+  when,
+} from "@microsoft/fast-element";
 import { reactive } from "@microsoft/fast-element/state.js";
 
-import { allComponents, provideFluentDesignSystem } from '@fluentui/web-components';
+import {
+  allComponents,
+  provideFluentDesignSystem,
+} from "@fluentui/web-components";
 import { loadFamousPeople, Person } from "./famous_people.js";
 import { Context } from "@microsoft/fast-element/context.js";
 provideFluentDesignSystem().register(allComponents);
@@ -19,7 +29,7 @@ class PersonListItem {
 
   constructor(data: Person | null = null, error: string | null = null) {
     this.data = data;
-    this.error = error;    
+    this.error = error;
   }
 
   /**
@@ -66,7 +76,6 @@ class PersonListItem {
     this.data = null;
     this.error = null;
   }
-
 }
 
 export const PeopleListContext = Context.create<PeopleListContext>("Counter");
@@ -76,7 +85,7 @@ export interface PeopleListContext {
   people: PersonListItem[];
 
   // Indicates that at least one person in the list is still loading.
-  isLoading: boolean;  
+  isLoading: boolean;
 
   // The number of loaded elements.
   loaded: number;
@@ -85,8 +94,10 @@ export interface PeopleListContext {
   refresh(position: number): void;
 }
 
-export class PeopleListContextElement extends FASTElement implements PeopleListContext {
-
+export class PeopleListContextElement
+  extends FASTElement
+  implements PeopleListContext
+{
   @observable
   people: PersonListItem[] = [];
 
@@ -96,8 +107,8 @@ export class PeopleListContextElement extends FASTElement implements PeopleListC
   @observable
   loaded: number = 0;
 
-  // The full list of famous people that will serve as our "database". 
-  // This is just dummy data. Normally, you would fetch it from server or 
+  // The full list of famous people that will serve as our "database".
+  // This is just dummy data. Normally, you would fetch it from server or
   // retrieve it in some other way.
   allPeople = loadFamousPeople();
 
@@ -109,8 +120,8 @@ export class PeopleListContextElement extends FASTElement implements PeopleListC
     // The "reactive" part is very important! It means that not only is the
     // list itself observable, but also that the individual objects in that
     // list will notify upon change any templates that use them.
-    let dummyData = [];
-    for (let i=0; i<ITEM_COUNT; i++) {
+    const dummyData = [];
+    for (let i = 0; i < ITEM_COUNT; i++) {
       dummyData.push(reactive(new PersonListItem()));
     }
     this.people = dummyData;
@@ -123,13 +134,13 @@ export class PeopleListContextElement extends FASTElement implements PeopleListC
 
     // This code simulates a long running "loading" script that
     // populates the "people" array one by one.
-    
+
     this.isLoading = true;
     this.loaded = 0;
     const loadOne = () => {
       if (Math.random() > ERROR_RATE) {
         this.people[this.loaded].setOk(this.allPeople[this.loaded]);
-        console.log("Loaded", this.people[this.loaded]);        
+        console.log("Loaded", this.people[this.loaded]);
       } else {
         this.people[this.loaded].setError("Failed to load.");
         console.log("Failed to load.");
@@ -140,7 +151,7 @@ export class PeopleListContextElement extends FASTElement implements PeopleListC
       } else {
         this.isLoading = false;
       }
-    }
+    };
     setTimeout(loadOne, LOAD_TIME);
   }
 
@@ -154,57 +165,120 @@ export class PeopleListContextElement extends FASTElement implements PeopleListC
       setTimeout(() => {
         if (Math.random() > 0.2) {
           this.people[position].setOk(this.allPeople[position]);
-          console.log("Reloaded", this.people[position]);        
+          console.log("Reloaded", this.people[position]);
         } else {
           this.people[position].setError("Failed to load after refresh.");
           console.log("Failed to load.");
         }
       }, LOAD_TIME);
-    }    
+    }
   }
-
 }
 
 PeopleListContextElement.define({
   name: "people-context",
   template: html`<slot></slot>`,
   styles: css``,
-})
+});
 
 export class PersonElement extends FASTElement {
   // Some suggestions for properties you might want to use:
-
-  // @PeopleListContext context!: PeopleListContext;
-
-  // @attr position: number = 0;
-
-  // @observable person: PersonListItem = new PersonListItem();
+  @PeopleListContext context!: PeopleListContext;
+  @attr position: number = 0;
+  @observable person: PersonListItem = new PersonListItem();
 }
 
-const personElementTemplate = html<PersonElement>``;
+const personElementTemplate = html<PersonElement>`
+  ${when(
+    (x) => x.person.isOk(),
+    html`<fluent-card style="padding: 16px; margin-bottom: 16px"
+      ><fluent-breadcrumb>
+        <fluent-breadcrumb-item>${(x) => x.person.data?.continentName}</fluent-breadcrumb-item>
+        <fluent-breadcrumb-item>${(x) => x.person.data?.countryName}</fluent-breadcrumb-item>
+        <fluent-breadcrumb-item>${(x) => x.person.data?.birthcity}</fluent-breadcrumb-item>
+      </fluent-breadcrumb>
+      <h2 style="margin-top: 0px">${(x) => x.person.data?.name}</h2>
+      <fluent-divider role="separator"></fluent-divider>
+      <p>
+        This person was born in ${(x) => x.person.data?.birthyear} and is/was working as ${(x) => x.person.data?.occupation} in the
+        ${(x) => x.person.data?.industry} industry.
+      </p>
+      <fluent-divider
+        role="separator"
+        style="margin-bottom: 16px"
+      ></fluent-divider>
+      <a href="https://maps.google.com/?q=${(x) => x.person.data?.LAT},${(x) => x.person.data?.LON}" target="_blank"
+        ><fluent-button appearance="accent">Show on map</fluent-button></a
+      >
+      <fluent-button @click=${(x) => x.context.refresh(x.position)} appearance="outline">Refresh</fluent-button></fluent-card
+    ></fluent-card>`,
+  )}
+  ${when(
+    (x) => x.person.isLoading(),
+    html`<fluent-skeleton
+      style="height: 66px; padding: 16px; box-sizing: border-box; margin-bottom: 16px "
+      shape="rect"
+      shimmer="true"
+      >Loading...</fluent-skeleton
+    >`,
+  )}
+  ${when(
+    (x) => x.person.isError(),
+    html`<fluent-card style="padding: 16px; margin-bottom: 16px; height: 66px">
+      <span style="display: inline-block; margin: 4px 16px 4px 16px"
+        >Item failed to load.</span
+      >
+      <fluent-button
+        @click=${(x) => x.context.refresh(x.position)}
+        appearance="accent"
+        style="float: left"
+        >Refesh</fluent-button
+      >
+    </fluent-card>`,
+  )}
+`;
 
 PersonElement.define({
   name: "person-item",
-  template: personElementTemplate
-})
+  template: personElementTemplate,
+});
 
 export class PeopleList extends FASTElement {
-  // Probably will need to access the context state:
-
-  // @PeopleListContext data!: PeopleListContext;
+  @PeopleListContext data!: PeopleListContext;
 
   connectedCallback(): void {
     super.connectedCallback();
 
     // This may be the place where you want to add child elements
     // assuming they are not part of the template?
+    for (let i = 0; i < this.data.people.length; i++) {
+      const personItem = document.createElement("person-item") as PersonElement;
+      personItem.position = i;
+      personItem.person = this.data.people[i];
+      this.appendChild(personItem);
+    }
   }
 }
 
-const personListTemplate = html<PeopleList>`
-<div></div>`
+const personListTemplate = html<PeopleList>` <div
+  class="uk-width-1-1"
+  style="padding: 16px"
+>
+  <div class="box">
+    <fluent-card style="padding: 16px; margin-bottom: 16px">
+      <span style="display: block; margin-bottom: 8px"
+        >Loaded ${(x) => x.data.loaded}/${(x) => x.data.people.length}:</span
+      >
+      <fluent-progress
+        max="${(x) => x.data.people.length}"
+        value="${(x) => x.data.loaded}"
+      ></fluent-progress>
+    </fluent-card>
+    <slot></slot>
+  </div>
+</div>`;
 
 PeopleList.define({
   name: "people-list",
-  template: personListTemplate
-})
+  template: personListTemplate,
+});
